@@ -4,10 +4,8 @@ from flask import request, Response
 import json
 from app import app
 
-#users endpoint
-@app.route("/api/users", methods = ["GET", "POST", "PATCH", "DELETE"])
+@app.route("/api/login", methods = ["POST", "DELETE"])
 
-# users handler
 def users():
     try:
         cursor = None
