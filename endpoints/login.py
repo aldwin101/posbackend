@@ -2,11 +2,12 @@ import mariadb
 import dbcreds
 from flask import request, Response
 import json
+import uuid
 from app import app
 
 @app.route("/api/login", methods = ["POST", "DELETE"])
 
-def users():
+def login():
     try:
         cursor = None
         conn = None
@@ -19,8 +20,43 @@ def users():
                         database=dbcreds.database
                         )
         cursor = conn.cursor()
-        
+            #allow the user to login
+        if request.method == "POST":
+            data = request.json
+            cursor.execute("SELECT id FROM users WHERE pin=?", [data.get("userPin")])
+            userId = cursor.fetchone()[0]
+            print(userId)
 
+            if userId != None:
+                loginToken = uuid.uuid4().hex
+                print(loginToken)
+                cursor.execute("INSERT IGNORE INTO user_login(user_id, login_token) VALUES(?,?)",[userId, loginToken])
+                conn.commit()
+
+                cursor.execute("SELECT users.id, firstname, lastname, position, login_token FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE users.id=?", [userId])
+                getUserData = cursor.fetchone()
+                print(getUserData)
+
+                userData = {
+                    "userId" : getUserData[0],
+                    "firstName" : getUserData[1],
+                    "lastName" : getUserData[2],
+                    "position" : getUserData[3],
+                    "loginToken" : getUserData[4]
+                }
+                
+                return Response(json.dumps(userData),
+                                mimetype="application/json",
+                                status=200)
+            else:
+                return Response("Invalid pin",
+                                mimetype="text/html",
+                                status=400)
+
+        else:
+            return Response("Request not allowed",
+                            mimetype="text/html",
+                            status=500)
 
     except mariadb.OperationalError:
         print("Operational error on the query")

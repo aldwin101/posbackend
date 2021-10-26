@@ -21,7 +21,51 @@ def users():
                         database=dbcreds.database
                         )
         cursor = conn.cursor()
-        
+        # GET method
+        if request.method == "GET":
+            params = request.args.get("userId")
+            if params == int:
+                cursor.execute("SELECT id, firstname, lastname, position FROM employees WHERE id=?", [params])
+                result = isinstance(params.get("userId"), int)
+                print (result)
+                userData = cursor.fetchone()
+                print(userData)
+
+                user = {
+                    "userId" : userData[0],
+                    "firstName" : userData[1],
+                    "lastName" : userData[2],
+                    "position" : userData[3]
+                }
+
+                return Response(json.dumps(user),
+                                mimetype="application/json",
+                                status=200)
+            
+            else:
+                cursor.execute("SELECT id, firstname, lastname, position FROM employees")
+                employees = cursor.fetchall()
+                print(employees)
+
+                if employees != None:
+                    allEmployees = []
+                    for employee in employees:
+                        employeeData = {
+                            "userId" : employee[0],
+                            "firstName" : employee[1],
+                            "lastName" : employee[2],
+                            "position" : employee[3]
+                        }
+                        allEmployees.append(employeeData)
+
+                    return Response(json.dumps(allEmployees),
+                                    mimetype="application/json",
+                                    status=200)
+
+        else:
+            return Response("Request not allowed",
+                            mimetype="text/html",
+                            status=500)
 
 
     except mariadb.OperationalError:
