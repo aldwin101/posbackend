@@ -20,7 +20,8 @@ def login():
                         database=dbcreds.database
                         )
         cursor = conn.cursor()
-            #allow the user to login
+            
+            # Allow the user to login provided the correct required data
         if request.method == "POST":
             data = request.json
             cursor.execute("SELECT id FROM users WHERE pin=?", [data.get("userPin")])
@@ -29,8 +30,7 @@ def login():
 
             if userId != None:
                 loginToken = uuid.uuid4().hex
-                print(loginToken)
-                cursor.execute("INSERT IGNORE INTO user_login(user_id, login_token) VALUES(?,?)",[userId, loginToken])
+                cursor.execute("INSERT INTO user_login(user_id, login_token) VALUES(?,?)",[userId, loginToken])
                 conn.commit()
 
                 cursor.execute("SELECT users.id, firstname, lastname, position, login_token FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE users.id=?", [userId])
@@ -50,6 +50,26 @@ def login():
                                 status=200)
             else:
                 return Response("Invalid pin",
+                                mimetype="text/html",
+                                status=400)
+
+            # Allow the user to logout provided the correct required data
+        elif request.method == "DELETE":
+            data = request.json
+            cursor.execute("SELECT user_id FROM user_login WHERE login_token=?", [data.get("loginToken")])
+            userId = cursor.fetchone()[0]
+            print(userId)
+
+            if userId != None:
+                cursor.execute("DELETE FROM user_login WHERE user_id=?", [userId])
+                conn.commit()
+
+                return Response("Deleted successfully",
+                                mimetype="text/html",
+                                status=200)
+            
+            else:
+                return Response("Invalid token",
                                 mimetype="text/html",
                                 status=400)
 
