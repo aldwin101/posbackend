@@ -21,6 +21,67 @@ def users():
                         database=dbcreds.database
                         )
         cursor = conn.cursor()
+        
+        # GET method
+        # Get a specific user or get all the users.
+        if request.method == "GET":
+            # Get a specific user using userId as params and return user information.
+            params = request.args
+            cursor.execute("SELECT id, firstname, lastname, position, pin, mobile_phone, home_phone FROM users WHERE id=?", [params.get("userId")])
+            userData = cursor.fetchone()
+            print(userData)
+
+            if userData:
+                if userData != None:
+                    user = {
+                        "userId" : userData[0],
+                        "firstName" : userData[1],
+                        "lastName" : userData[2],
+                        "position" : userData[3],
+                        "pin" : userData[4],
+                        "mobilePhone" : userData[5],
+                        "homePhone" : userData[6]
+                    }
+
+                    return Response(json.dumps(user),
+                                    mimetype="application/json",
+                                    status=200)
+            
+                else:
+                    return Response(json.dumps("Invalid user id"),
+                                    mimetype="application/json",
+                                    status=404)
+            else:
+                # Get all users and return all users information.
+                cursor.execute("SELECT id, firstname, lastname, position, pin, mobile_phone, home_phone FROM users")
+                usersData = cursor.fetchall()
+                print(usersData)
+
+                usersList = []
+
+                for users in usersData:
+                    user = {
+                        "userId" : users[0],
+                        "firstName" : users[1],
+                        "lastName" : users[2],
+                        "position" : users[3],
+                        "pin" : users[4],
+                        "mobilePhone" : users[5],
+                        "homePhone" : users[6]
+                    }
+                    usersList.append(user)
+                
+                return Response(json.dumps(usersList),
+                                mimetype="application/json",
+                                status=200)
+        
+
+
+
+        else:
+            return Response("Request not allowed",
+                            mimetype="text/html",
+                            status=500)
 
 
     except mariadb.OperationalError:
@@ -40,7 +101,6 @@ def users():
             cursor.close()
         else:
             print("There was never a cursor to begin with")
-        # Check the connection
         if (conn != None):
             conn.rollback()
             conn.close()

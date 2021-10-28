@@ -24,7 +24,7 @@ def login():
             # Allow the user to login provided the correct required data
         if request.method == "POST":
             data = request.json
-            cursor.execute("SELECT id FROM users WHERE pin=?", [data.get("userPin")])
+            cursor.execute("SELECT id FROM users WHERE username=? and password=?", [data.get("username"), data.get("password")])
             userId = cursor.fetchone()[0]
             print(userId)
 
@@ -33,7 +33,7 @@ def login():
                 cursor.execute("INSERT INTO user_login(user_id, login_token) VALUES(?,?)",[userId, loginToken])
                 conn.commit()
 
-                cursor.execute("SELECT users.id, firstname, lastname, position, login_token FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE users.id=?", [userId])
+                cursor.execute("SELECT users.id, firstname, lastname, position, pin, login_token FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE users.id=?", [userId])
                 getUserData = cursor.fetchone()
                 print(getUserData)
 
@@ -42,7 +42,8 @@ def login():
                     "firstName" : getUserData[1],
                     "lastName" : getUserData[2],
                     "position" : getUserData[3],
-                    "loginToken" : getUserData[4]
+                    "pin" : getUserData[4],
+                    "loginToken" : getUserData[5],
                 }
                 
                 return Response(json.dumps(userData),
