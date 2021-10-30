@@ -3,6 +3,10 @@ import dbcreds
 from flask import request, Response
 import json
 from app import app
+import random
+import datetime
+import bcrypt
+
 
 #users endpoint
 @app.route("/api/users", methods = ["GET", "POST", "PATCH", "DELETE"])
@@ -27,56 +31,101 @@ def users():
         if request.method == "GET":
             # Get a specific user using userId as params and return user information.
             params = request.args
-            cursor.execute("SELECT id, firstname, lastname, position, pin, mobile_phone, home_phone FROM users WHERE id=?", [params.get("userId")])
+            cursor.execute("SELECT id, username, firstname, lastname, position, pin, mobile_phone, home_phone, created FROM users WHERE id=?", [params.get("userId")])
             userData = cursor.fetchone()
             print(userData)
+            password = "defpass"
+            hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt(16))
+            print(hashed)
+            dateCreated = datetime.date.today()
+            print(dateCreated)
+            userPin = random.randint(10000,99999)
+            print(userPin)
 
+            
             if userData:
                 if userData != None:
                     user = {
                         "userId" : userData[0],
-                        "firstName" : userData[1],
-                        "lastName" : userData[2],
-                        "position" : userData[3],
-                        "pin" : userData[4],
-                        "mobilePhone" : userData[5],
-                        "homePhone" : userData[6]
+                        "username" : userData[1],
+                        "firstName" : userData[2],
+                        "lastName" : userData[3],
+                        "position" : userData[4],
+                        "pin" : userData[5],
+                        "mobilePhone" : userData[6],
+                        "homePhone" : userData[7],
+                        "created" : userData[8]
                     }
 
-                    return Response(json.dumps(user),
+                    return Response(json.dumps(user, default=str),
                                     mimetype="application/json",
                                     status=200)
             
                 else:
-                    return Response(json.dumps("Invalid user id"),
+                    return Response("Invalid user id",
                                     mimetype="application/json",
                                     status=404)
             else:
                 # Get all users and return all users information.
-                cursor.execute("SELECT id, firstname, lastname, position, pin, mobile_phone, home_phone FROM users")
-                usersData = cursor.fetchall()
-                print(usersData)
+                cursor.execute("SELECT id, username, firstname, lastname, position, pin, mobile_phone, home_phone, created FROM users")
+                allUsersData = cursor.fetchall()
+                print(allUsersData)
 
-                usersList = []
-
-                for users in usersData:
-                    user = {
-                        "userId" : users[0],
-                        "firstName" : users[1],
-                        "lastName" : users[2],
-                        "position" : users[3],
-                        "pin" : users[4],
-                        "mobilePhone" : users[5],
-                        "homePhone" : users[6]
-                    }
-                    usersList.append(user)
-                
-                return Response(json.dumps(usersList),
-                                mimetype="application/json",
-                                status=200)
+                if allUsersData != None:
+                    usersList = []
+                    for users in allUsersData:
+                        userData = {
+                            "userId" : users[0],
+                            "username" : users[1],
+                            "firstName" : users[2],
+                            "lastName" : users[3],
+                            "position" : users[4],
+                            "pin" : users[5],
+                            "mobilePhone" : users[6],
+                            "homePhone" : users[7],
+                            "created" : users[8]
+                        }
+                        usersList.append(userData)
+                    
+                    return Response(json.dumps(usersList, default=str),
+                                    mimetype="application/json",
+                                    status=200)
         
+        # POST method
+        # Create a user
+        elif request.method == "POST":
+            data = request.json
+            password = "defpass" # assign default password
+            userPin = random.randint(10000,99999) # generate 5 digit pin
+            dateCreated = datetime.date.today() # date today
+            hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt(14)) # hashed and salted password
+            
+            # Create new user
+            cursor.execute("INSERT INTO users (username, firstname, lastname, password, pin, position, mobile_phone, home_phone, created) VALUES (?,?,?,?,?,?,?,?,?) ",
+                [data.get("username"), data.get("firstName"), data.get("lastName"), hashed, userPin, data.get("position"), data.get("mobilePhone"), data.get("homePhone"), dateCreated])
+            conn.commit()
+            newUserId = cursor.lastrowid
+            
+            print(newUserId)
 
+            cursor.execute("SELECT id, username, firstname, lastname, pin, position, mobile_phone, home_phone, created FROM users WHERE id=?", [newUserId])
+            newUserData = cursor.fetchone()
 
+            newUser = {
+                "userId" : newUserData[0],
+                "username" : newUserData[1],
+                "firstName" : newUserData[2],
+                "lastName" : newUserData[3],
+                "pin" : newUserData[4],
+                "position" : newUserData[5],
+                "mobilePhone" : newUserData[6],
+                "homePhone" : newUserData[7],
+                "created" : newUserData[8]
+            }
+
+            return Response(json.dumps(newUser, default=str),
+                            mimetype="application/json",
+                            status=200)
 
         else:
             return Response("Request not allowed",
