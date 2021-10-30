@@ -177,6 +177,7 @@ def users():
         # DELETE method
         elif request.method == "DELETE":
             data = request.json
+            
             cursor.execute("SELECT password, login_token FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE password=? and login_token=?", [data.get("password"), data.get("loginToken")])
             userData = cursor.fetchone()
             print(userData)

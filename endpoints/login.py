@@ -4,6 +4,7 @@ from flask import request, Response
 import json
 import uuid
 from app import app
+import bcrypt
 
 @app.route("/api/login", methods = ["POST", "DELETE"])
 
@@ -24,11 +25,14 @@ def login():
             # Allow the user to login provided the correct required data
         if request.method == "POST":
             data = request.json
-            cursor.execute("SELECT id FROM users WHERE username=? and password=?", [data.get("username"), data.get("password")])
-            userId = cursor.fetchone()[0]
-            print(userId)
+            password = data.get("password")
+            cursor.execute("SELECT password, id FROM users WHERE username=?", [data.get("username")])
+            result = cursor.fetchone()
+            pwFromDB = result[0]
+            userId = result[1]
+            
+            if (bcrypt.checkpw(password.encode(), pwFromDB.encode())):
 
-            if userId != None:
                 loginToken = uuid.uuid4().hex
                 cursor.execute("INSERT INTO user_login(user_id, login_token) VALUES(?,?)",[userId, loginToken])
                 conn.commit()
@@ -50,7 +54,7 @@ def login():
                                 mimetype="application/json",
                                 status=200)
             else:
-                return Response("Invalid pin",
+                return Response("Invalid username or password",
                                 mimetype="text/html",
                                 status=400)
 
