@@ -27,12 +27,11 @@ def login():
             data = request.json
             password = data.get("password")
             cursor.execute("SELECT password, id FROM users WHERE username=?", [data.get("username")])
-            result = cursor.fetchone()
-            pwFromDB = result[0]
-            userId = result[1]
+            reqData = cursor.fetchone()
+            pwFromDB = reqData[0]
+            userId = reqData[1]
             
-            if (bcrypt.checkpw(password.encode(), pwFromDB.encode())):
-
+            if (bcrypt.checkpw(password.encode(), pwFromDB.encode())): # compare pw provided by the user and from the db
                 loginToken = uuid.uuid4().hex
                 cursor.execute("INSERT INTO user_login(user_id, login_token) VALUES(?,?)",[userId, loginToken])
                 conn.commit()

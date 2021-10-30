@@ -31,7 +31,7 @@ def users():
         if request.method == "GET":
             # Get a specific user using userId as params and return user information.
             params = request.args
-            cursor.execute("SELECT id, username, firstname, lastname, position, pin, mobile_phone, home_phone, created FROM users WHERE id=?", [params.get("userId")])
+            cursor.execute("SELECT id, username, firstname, lastname, position, mobile_phone, home_phone, created FROM users WHERE id=?", [params.get("userId")])
             userData = cursor.fetchone()
             
             if userData:
@@ -42,10 +42,9 @@ def users():
                         "firstName" : userData[2],
                         "lastName" : userData[3],
                         "position" : userData[4],
-                        "pin" : userData[5],
-                        "mobilePhone" : userData[6],
-                        "homePhone" : userData[7],
-                        "created" : userData[8]
+                        "mobilePhone" : userData[5],
+                        "homePhone" : userData[6],
+                        "created" : userData[7]
                     }
 
                     return Response(json.dumps(user, default=str),
@@ -58,7 +57,7 @@ def users():
                                     status=404)
             else:
                 # Get all users and return all users information.
-                cursor.execute("SELECT id, username, firstname, lastname, position, pin, mobile_phone, home_phone, created FROM users")
+                cursor.execute("SELECT id, username, firstname, lastname, position, mobile_phone, home_phone, created FROM users")
                 allUsersData = cursor.fetchall()
                 print(allUsersData)
 
@@ -71,10 +70,9 @@ def users():
                             "firstName" : users[2],
                             "lastName" : users[3],
                             "position" : users[4],
-                            "pin" : users[5],
-                            "mobilePhone" : users[6],
-                            "homePhone" : users[7],
-                            "created" : users[8]
+                            "mobilePhone" : users[5],
+                            "homePhone" : users[6],
+                            "created" : users[7]
                         }
                         usersList.append(userData)
                     
@@ -146,7 +144,7 @@ def users():
 
                 elif data.get("home_phone") != None and data.get("") != "":
                     cursor.execute("UPDATE users SET home_phone = ? WHERE id=?", [data.get("home_phone"), userId])
-                
+
                 else: 
                     return Response("Field cannot be empty", 
                                     mimetype="text/html", 
@@ -172,15 +170,29 @@ def users():
                 return Response("Invalid user id",
                             mimetype="text/html",
                             status=404)
-        
 
         # DELETE method
         elif request.method == "DELETE":
             data = request.json
-            
-            cursor.execute("SELECT password, login_token FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE password=? and login_token=?", [data.get("password"), data.get("loginToken")])
-            userData = cursor.fetchone()
-            print(userData)
+            password = data.get("password")
+            cursor.execute("SELECT password, login_token FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE login_token=?", [data.get("loginToken")])
+            reqData = cursor.fetchone()
+            print(reqData)
+            pwFromDB = reqData[0]
+            loginToken = reqData[1]
+
+            if (bcrypt.checkpw(password.encode(), pwFromDB.encode())):
+                print("success")
+                cursor.execute("DELETE users, user_login FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE login_token=?",[loginToken])
+                conn.commit()
+
+                return Response("Deleted suucessfully",
+                                mimetype="text/html",
+                                status=200)
+            else:
+                return Response("Wrong data provided",
+                                mimetype="text/html",
+                                status=404)
 
         else:
             return Response("Request not allowed",
