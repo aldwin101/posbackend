@@ -33,15 +33,6 @@ def users():
             params = request.args
             cursor.execute("SELECT id, username, firstname, lastname, position, pin, mobile_phone, home_phone, created FROM users WHERE id=?", [params.get("userId")])
             userData = cursor.fetchone()
-            print(userData)
-            password = "defpass"
-            hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt(16))
-            print(hashed)
-            dateCreated = datetime.date.today()
-            print(dateCreated)
-            userPin = random.randint(10000,99999)
-            print(userPin)
-
             
             if userData:
                 if userData != None:
@@ -92,23 +83,22 @@ def users():
                                     status=200)
         
         # POST method
-        # Create a user
         elif request.method == "POST":
             data = request.json
-            password = "defpass" # assign default password
-            userPin = random.randint(10000,99999) # generate 5 digit pin
-            dateCreated = datetime.date.today() # date today
-            hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt(14)) # hashed and salted password
+            password = "defpass"
+            userPin = random.randint(10000,99999)
+            dateCreated = datetime.date.today()
+            hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt(14))
             
-            # Create new user
-            cursor.execute("INSERT INTO users (username, firstname, lastname, password, pin, position, mobile_phone, home_phone, created) VALUES (?,?,?,?,?,?,?,?,?) ",
-                [data.get("username"), data.get("firstName"), data.get("lastName"), hashed, userPin, data.get("position"), data.get("mobilePhone"), data.get("homePhone"), dateCreated])
+            # Allow the user to create new user
+            cursor.execute("INSERT INTO users (username, firstname, lastname, password, position, pin, mobile_phone, home_phone, created) VALUES (?,?,?,?,?,?,?,?,?) ",
+                [data.get("username"), data.get("firstName"), data.get("lastName"), hashed, data.get("position"), userPin, data.get("mobilePhone"), data.get("homePhone"), dateCreated])
             conn.commit()
             newUserId = cursor.lastrowid
             
             print(newUserId)
 
-            cursor.execute("SELECT id, username, firstname, lastname, pin, position, mobile_phone, home_phone, created FROM users WHERE id=?", [newUserId])
+            cursor.execute("SELECT id, username, firstname, lastname, position, pin, mobile_phone, home_phone, created FROM users WHERE id=?", [newUserId])
             newUserData = cursor.fetchone()
 
             newUser = {
@@ -116,8 +106,8 @@ def users():
                 "username" : newUserData[1],
                 "firstName" : newUserData[2],
                 "lastName" : newUserData[3],
-                "pin" : newUserData[4],
-                "position" : newUserData[5],
+                "position" : newUserData[4],
+                "pin" : newUserData[5],
                 "mobilePhone" : newUserData[6],
                 "homePhone" : newUserData[7],
                 "created" : newUserData[8]
@@ -126,6 +116,70 @@ def users():
             return Response(json.dumps(newUser, default=str),
                             mimetype="application/json",
                             status=200)
+
+        # PATCH method
+        elif request.method == "PATCH":
+            data = request.json
+            cursor.execute("SELECT user_id FROM user_login WHERE login_token=?", [data.get("loginToken")])
+            userId = cursor.fetchone()[0]
+            print(userId)
+
+            # Allow the user to edit the information individually
+            if userId != None:
+                if data.get("username") != None and data.get("username") != "":
+                    cursor.execute("UPDATE users SET username = ? WHERE id=?", [data.get("username"), userId])
+
+                elif data.get("firstname") != None and data.get("firstname") != "":
+                    cursor.execute("UPDATE users SET firstname = ? WHERE id=?", [data.get("firstname"), userId])
+
+                elif data.get("lastname") != None and data.get("lastname") != "":
+                    cursor.execute("UPDATE users SET lastname = ? WHERE id=?", [data.get("lastname"), userId])
+                
+                elif data.get("password") != None and data.get("password") != "":
+                    cursor.execute("UPDATE users SET password = ? WHERE id=?", [data.get("password"), userId])
+                
+                elif data.get("pin") != None and data.get("pin") != "":
+                    cursor.execute("UPDATE users SET pin = ? WHERE id=?", [data.get("pin"), userId])
+
+                elif data.get("mobile_phone") != None and data.get("mobile_phone") != "":
+                    cursor.execute("UPDATE users SET mobile_phone = ? WHERE id=?", [data.get("mobile_phone"), userId])
+
+                elif data.get("home_phone") != None and data.get("") != "":
+                    cursor.execute("UPDATE users SET home_phone = ? WHERE id=?", [data.get("home_phone"), userId])
+                
+                else: 
+                    return Response("Field cannot be empty", 
+                                    mimetype="text/html", 
+                                    status=400)
+                conn.commit()
+
+                cursor.execute("SELECT * FROM users WHERE id=?", [userId])
+                getUpdatedData = cursor.fetchone()
+
+                updatedData = {
+                    "userId" : getUpdatedData[0],
+                    "username" : getUpdatedData[1],
+                    "firstName" : getUpdatedData[2],
+                    "lastName" : getUpdatedData[3],
+                    "mobilePhone" : getUpdatedData[5],
+                    "homePhone" : getUpdatedData[6]
+                }
+
+                return Response(json.dumps(updatedData),
+                            mimetype="application/json",
+                            status=200)
+            else:
+                return Response("Invalid user id",
+                            mimetype="text/html",
+                            status=404)
+        
+
+        # DELETE method
+        elif request.method == "DELETE":
+            data = request.json
+            cursor.execute("SELECT password, login_token FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE password=? and login_token=?", [data.get("password"), data.get("loginToken")])
+            userData = cursor.fetchone()
+            print(userData)
 
         else:
             return Response("Request not allowed",

@@ -33,17 +33,17 @@ def login():
                 cursor.execute("INSERT INTO user_login(user_id, login_token) VALUES(?,?)",[userId, loginToken])
                 conn.commit()
 
-                cursor.execute("SELECT users.id, firstname, lastname, position, pin, login_token FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE users.id=?", [userId])
+                cursor.execute("SELECT users.id, username, firstname, lastname, position, login_token FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE users.id=?", [userId])
                 getUserData = cursor.fetchone()
                 print(getUserData)
 
                 userData = {
                     "userId" : getUserData[0],
-                    "firstName" : getUserData[1],
-                    "lastName" : getUserData[2],
-                    "position" : getUserData[3],
-                    "pin" : getUserData[4],
-                    "loginToken" : getUserData[5],
+                    "username" : getUserData[1],
+                    "firstName" : getUserData[2],
+                    "lastName" : getUserData[3],
+                    "position" : getUserData[4],
+                    "loginToken" : getUserData[5]
                 }
                 
                 return Response(json.dumps(userData),
