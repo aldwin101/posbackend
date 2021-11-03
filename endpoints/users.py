@@ -59,7 +59,6 @@ def users():
                 # Get all users and return all users information.
                 cursor.execute("SELECT id, username, firstname, lastname, position, mobile_phone, home_phone, created FROM users")
                 allUsersData = cursor.fetchall()
-                print(allUsersData)
 
                 if allUsersData != None:
                     usersList = []
@@ -94,8 +93,6 @@ def users():
             conn.commit()
             newUserId = cursor.lastrowid
             
-            print(newUserId)
-
             cursor.execute("SELECT id, username, firstname, lastname, position, pin, mobile_phone, home_phone, created FROM users WHERE id=?", [newUserId])
             newUserData = cursor.fetchone()
 
@@ -120,7 +117,6 @@ def users():
             data = request.json
             cursor.execute("SELECT user_id FROM user_login WHERE login_token=?", [data.get("loginToken")])
             userId = cursor.fetchone()[0]
-            print(userId)
 
             # Allow the user to edit the information individually
             if userId != None:
@@ -177,12 +173,10 @@ def users():
             password = data.get("password")
             cursor.execute("SELECT password, login_token FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE login_token=?", [data.get("loginToken")])
             reqData = cursor.fetchone()
-            print(reqData)
             pwFromDB = reqData[0]
             loginToken = reqData[1]
 
-            if (bcrypt.checkpw(password.encode(), pwFromDB.encode())):
-                print("success")
+            if (bcrypt.checkpw(password.encode(), pwFromDB.encode())): # compare pw provided by the user and pw from the db
                 cursor.execute("DELETE users, user_login FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE login_token=?",[loginToken])
                 conn.commit()
 

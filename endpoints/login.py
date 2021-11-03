@@ -31,7 +31,7 @@ def login():
             pwFromDB = reqData[0]
             userId = reqData[1]
             
-            if (bcrypt.checkpw(password.encode(), pwFromDB.encode())): # compare pw provided by the user and from the db
+            if (bcrypt.checkpw(password.encode(), pwFromDB.encode())):
                 loginToken = uuid.uuid4().hex
                 cursor.execute("INSERT INTO user_login(user_id, login_token) VALUES(?,?)",[userId, loginToken])
                 conn.commit()
@@ -99,7 +99,6 @@ def login():
             cursor.close()
         else:
             print("There was never a cursor to begin with")
-        # Check the connection
         if (conn != None):
             conn.rollback()
             conn.close()
