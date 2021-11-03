@@ -20,6 +20,7 @@ def dishes():
                         )
         cursor = conn.cursor()
     
+        # GET method
         if request.method == "GET":
             params = request.args
             cursor.execute("SELECT * FROM dishes WHERE id=?",[params.get("dishId")])
@@ -35,8 +36,8 @@ def dishes():
                         "category" : dishInfo[3]
                     }
 
-                    return Response(json.dumps(dish),
-                                    mimetype="text/html",
+                    return Response(json.dumps(dish, default=str),
+                                    mimetype="application/json",
                                     status=200)
                 else:
                     return Response("Invalid id",
@@ -61,7 +62,29 @@ def dishes():
                     return Response(json.dumps(dishList,default=str),
                                     mimetype="application/json",
                                     status=200)
-       
+        
+        # POST method
+        elif request.method == "POST":
+            data = request.json
+            cursor.execute("INSERT INTO dishes(dish_name, price, category) VALUES(?,?,?)",[data.get("dishName"), data.get("price"), data.get("category")])
+            conn.commit()
+            newDishId = cursor.lastrowid
+            print(newDishId)
+
+            cursor.execute("SELECT * FROM dishes WHERE id=?",[newDishId])
+            getDish = cursor.fetchone()
+            print(getDish)
+
+            newDish = {
+                "dishId" : getDish[0],
+                "dishName" : getDish[1],
+                "price" : getDish[2],
+                "category" : getDish[3]
+            }
+
+            return Response(json.dumps(newDish, default=str),
+                            mimetype="application/json",
+                            status=200)
 
 
 
