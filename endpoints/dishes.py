@@ -1,3 +1,4 @@
+import re
 import mariadb
 import dbcreds
 from flask import request, Response
@@ -154,10 +155,43 @@ def dishes():
                     return Response("You are not authorized!",
                                     mimetype="text/html",
                                     status=400)
-
+            
+            else:
+                return Response("Invalid data sent",
+                                mimetype="text/html",
+                                status=400)
                     
+        # DELETE method
+        elif request.method == "DELETE":
+            data = request.json
+            cursor.execute("SELECT position FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE login_token=?",[data.get("loginToken")])
+            position = cursor.fetchone()[0]
+            print(position)
 
-                
+            cursor.execute("SELECT id FROM dishes WHERE id=?",[data.get("dishId")])
+            dishId = cursor.fetchone()[0]
+            print(dishId)
+
+            if position != None:
+                if position == "manager":
+                    cursor.execute("DELETE FROM dishes WHERE id=?", [dishId])
+                    conn.commit()
+
+                    return Response("Deleted successfully",
+                                    mimetype="text/html",
+                                    status=200)
+                else: 
+                    return Response("You are not authorized",
+                                    mimetype="text/html",
+                                    status=400)
+            else:
+                return Response("Invalid data sent",
+                                mimetype="text/html",
+                                status=500)
+        else: 
+            return Response("Method not allowed",
+                            mimetype="text/html",
+                            status=500)
 
                 
                 
