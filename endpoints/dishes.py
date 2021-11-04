@@ -194,9 +194,6 @@ def dishes():
                             status=500)
 
                 
-                
-
-
     except mariadb.OperationalError:
         print("Operational error on the query")
     except mariadb.DataError:

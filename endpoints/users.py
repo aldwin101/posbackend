@@ -27,9 +27,9 @@ def users():
         cursor = conn.cursor()
         
         # GET method
-        # Get a specific user or get all the users.
         if request.method == "GET":
-            # Get a specific user using userId as params and return user information.
+
+            # Get specific user based on id and return user info.
             params = request.args
             cursor.execute("SELECT id, username, firstname, lastname, position, mobile_phone, home_phone, created FROM users WHERE id=?", [params.get("userId")])
             userData = cursor.fetchone()
@@ -56,7 +56,7 @@ def users():
                                     mimetype="application/json",
                                     status=404)
             else:
-                # Get all users and return all users information.
+                # Get all users and return users info.
                 cursor.execute("SELECT id, username, firstname, lastname, position, mobile_phone, home_phone, created FROM users")
                 allUsersData = cursor.fetchall()
 
@@ -83,11 +83,11 @@ def users():
         elif request.method == "POST":
             data = request.json
             password = "defpass"
-            userPin = random.randint(10000,99999)
+            userPin = random.randint(10000,99999) # Generate 5 digit random numbers
             dateCreated = datetime.date.today()
-            hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt(14))
+            hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt(14)) #hashed and salt pw
             
-            # Allow the user to create new user
+            # Create new user and return new user info.
             cursor.execute("INSERT INTO users (username, firstname, lastname, password, position, pin, mobile_phone, home_phone, created) VALUES (?,?,?,?,?,?,?,?,?) ",
                 [data.get("username"), data.get("firstName"), data.get("lastName"), hashed, data.get("position"), userPin, data.get("mobilePhone"), data.get("homePhone"), dateCreated])
             conn.commit()
@@ -118,7 +118,7 @@ def users():
             cursor.execute("SELECT user_id FROM user_login WHERE login_token=?", [data.get("loginToken")])
             userId = cursor.fetchone()[0]
 
-            # Allow the user to edit the information individually
+            # Edit info individually
             if userId != None:
                 if data.get("username") != None and data.get("username") != "":
                     cursor.execute("UPDATE users SET username = ? WHERE id=?", [data.get("username"), userId])
@@ -147,7 +147,7 @@ def users():
                                     status=400)
                 conn.commit()
 
-                cursor.execute("SELECT * FROM users WHERE id=?", [userId])
+                cursor.execute("SELECT id, username, firstname, lastname, mobile_phone, home_phone FROM users WHERE id=?", [userId])
                 getUpdatedData = cursor.fetchone()
 
                 updatedData = {
@@ -176,7 +176,7 @@ def users():
             pwFromDB = reqData[0]
             loginToken = reqData[1]
 
-            if (bcrypt.checkpw(password.encode(), pwFromDB.encode())): # compare pw provided by the user and pw from the db
+            if (bcrypt.checkpw(password.encode(), pwFromDB.encode())): # compare pw
                 cursor.execute("DELETE users, user_login FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE login_token=?",[loginToken])
                 conn.commit()
 
