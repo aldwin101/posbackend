@@ -7,3 +7,4 @@ import endpoints.users
 import endpoints.login
 import endpoints.dishes
 import endpoints.orders
+import endpoints.tables
