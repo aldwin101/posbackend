@@ -72,7 +72,36 @@ def orders():
                                         mimetype="application/json",
                                         status=200)
 
-        
+        # POST method
+        elif request.method == "POST":
+            data = request.json
+            orderDate = datetime.datetime.today()
+            cursor.execute("SELECT user_id FROM user_login WHERE login_token=?", [data.get("loginToken")])
+            userId = cursor.fetchone()[0]
+            print(userId)
+
+            cursor.execute("SELECT id FROM dishes WHERE dish_name=?",[data.get("dishName")])
+            dishId = cursor.fetchone()[0]
+
+
+            if userId != None and dishId != None:
+                cursor.execute("INSERT INTO orders(order_date, user_id) VALUES(?,?)", [orderDate, userId])
+                conn.commit()
+                orderId = cursor.lastrowid
+
+                cursor.execute("INSERT INTO tables(order_id, user_id) VALUES(?,?)", [orderId, userId])
+                conn.commit()
+                tableId = cursor.lastrowid
+
+                cursor.execute("INSERT INTO order_content(dish_id, order_id) VALUES(?,?)", [dishId, orderId])
+                conn.commit()
+            
+                cursor.execute("SELECT tables.id, user_id, dish_id, price, order_date FROM tables INNER JOIN orders ON orders.id=tables.order_id INNER JOIN order_content ON orders.id=order_content.order_id INNER JOIN dishes ON dishes.id=order_content.dish_id WHERE tables.id=?", [tableId])
+                newOrder = cursor.fetchone()
+                print(newOrder)
+
+                return Response("Success")
+
 
         else:
             return Response("Request not allowed",
