@@ -20,51 +20,59 @@ def orders():
                         database=dbcreds.database
                         )
         cursor = conn.cursor()
-            
+        
+        # GET method
         if request.method == "GET":
             params = request.args
-            cursor.execute("SELECT orders.id, user_id, dish_name, price, order_date FROM dishes INNER JOIN orders ON dishes.id=orders.dish_id WHERE orders.id=?", [params.get("orderId")])
-            orderInfo = cursor.fetchone()
+            cursor.execute("SELECT user_id, dish_id, dish_name, price, order_date FROM order_content INNER JOIN dishes ON dishes.id=order_content.dish_id INNER JOIN orders ON orders.id=order_content.order_id WHERE order_id=?", [params.get("orderId")])
+            getOrders = cursor.fetchall()
+            print(getOrders)
 
-            if orderInfo:
-                if orderInfo != None:
-                    order = {
-                        "orderId" : orderInfo[0],
-                        "userId" : orderInfo[1],
-                        "dishName" : orderInfo[2],
-                        "price" : orderInfo[3],
-                        "orderDate" : orderInfo[4]
-                    }
-                    return Response(json.dumps(order,default=str),
+            if getOrders:
+                if getOrders != None:
+                    orders = []
+                    for order in getOrders:
+                        orderData = {
+                            "userId" : order[0],
+                            "dishId" : order[1],
+                            "dishName" : order[2],
+                            "price" : order[3],
+                            "orderDate" : order[4]
+                        }
+                        orders.append(orderData)
+
+                    return Response(json.dumps(orders, default=str),
                                     mimetype="application/json",
                                     status=200)
+                
                 else:
                     return Response("Invalid id",
                                     mimetype="text/html",
-                                    status=400)
+                                    status=404)
+            
             else:
-                cursor.execute("SELECT orders.id, user_id, dish_name, price, order_date FROM dishes INNER JOIN orders ON dishes.id=orders.dish_id ORDER BY order_date DESC")
+                cursor.execute("SELECT user_id, dish_id, dish_name, price, order_date FROM order_content INNER JOIN dishes ON dishes.id=order_content.dish_id INNER JOIN orders ON orders.id=order_content.order_id ORDER BY order_date DESC")
                 getOrders = cursor.fetchall()
                 print(getOrders)
 
-                if getOrders != None:
-                    allOrders = []
-                    for orders in getOrders:
-                        order = {
-                            "orderId" : orders[0],
-                            "userId" : orders[1],
-                            "dishName" : orders[2],
-                            "price" : orders[3],
-                            "orderDate" : orders[4]
-                        }
-                        allOrders.append(order)
+                if getOrders:
+                    if getOrders != None:
+                        orders = []
+                        for order in getOrders:
+                            orderData = {
+                                "userId" : order[0],
+                                "dishId" : order[1],
+                                "dishName" : order[2],
+                                "price" : order[3],
+                                "orderDate" : order[4]
+                            }
+                            orders.append(orderData)
 
-                    return Response(json.dumps(allOrders, default=str),
-                                    mimetype="application/json",
-                                    status=200)
+                        return Response(json.dumps(orders, default=str),
+                                        mimetype="application/json",
+                                        status=200)
 
-
-                
+        
 
         else:
             return Response("Request not allowed",
