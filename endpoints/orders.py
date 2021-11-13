@@ -116,18 +116,27 @@ def orders():
         # DELETE method
         elif request.method == "DELETE":
             data = request.json
-            isActive = 1
             tableNumber = data.get("tableNumber")
             cursor.execute("SELECT user_id FROM user_login WHERE login_token=?", [data.get("loginToken")])
             userId = cursor.fetchone()[0]
+            print(userId)
 
             cursor.execute("SELECT id FROM dishes WHERE dish_name=?",[data.get("dishName")])
             dishId = cursor.fetchone()[0]
+            print(dishId)
+            
+            if userId != None and dishId != None:
+                cursor.execute("DELETE orders, order_content FROM orders INNER JOIN order_content ON orders.id=order_content.order_id WHERE user_id=? and dish_id=? and table_number=?",[userId, dishId, tableNumber])
+                conn.commit()
                 
-                
-
-
-
+                return Response("Successfully deleted",
+                                mimetype="text/html",
+                                status=200)
+            else:
+                return Response("Delete failed",
+                                mimetype="text/html",
+                                status=404)
+        
         else:
             return Response("Request not allowed",
                             mimetype="text/html",
