@@ -24,7 +24,7 @@ def orders():
         # GET method
         if request.method == "GET":
             params = request.args
-            cursor.execute("SELECT user_id, dish_id, dish_name, price, order_date FROM order_content INNER JOIN dishes ON dishes.id=order_content.dish_id INNER JOIN orders ON orders.id=order_content.order_id WHERE order_id=?", [params.get("orderId")])
+            cursor.execute("SELECT table_number, user_id, dish_name, price, order_date FROM order_content INNER JOIN dishes ON dishes.id=order_content.dish_id INNER JOIN orders ON orders.id=order_content.order_id WHERE order_id=?", [params.get("orderId")])
             getOrders = cursor.fetchall()
             print(getOrders)
 
@@ -33,8 +33,8 @@ def orders():
                     orders = []
                     for order in getOrders:
                         orderData = {
-                            "userId" : order[0],
-                            "dishId" : order[1],
+                            "tableNumber" : order[0],
+                            "userId" : order[1],
                             "dishName" : order[2],
                             "price" : order[3],
                             "orderDate" : order[4]
@@ -51,7 +51,7 @@ def orders():
                                     status=404)
             
             else:
-                cursor.execute("SELECT user_id, dish_id, dish_name, price, order_date FROM order_content INNER JOIN dishes ON dishes.id=order_content.dish_id INNER JOIN orders ON orders.id=order_content.order_id ORDER BY order_date DESC")
+                cursor.execute("SELECT table_number, user_id, dish_name, price, order_date FROM order_content INNER JOIN dishes ON dishes.id=order_content.dish_id INNER JOIN orders ON orders.id=order_content.order_id ORDER BY order_date DESC")
                 getOrders = cursor.fetchall()
                 print(getOrders)
 
@@ -60,8 +60,8 @@ def orders():
                         orders = []
                         for order in getOrders:
                             orderData = {
-                                "userId" : order[0],
-                                "dishId" : order[1],
+                                "tableNumber" : order[0],
+                                "userId" : order[1],
                                 "dishName" : order[2],
                                 "price" : order[3],
                                 "orderDate" : order[4]
@@ -75,46 +75,56 @@ def orders():
         # POST method
         elif request.method == "POST":
             data = request.json
+            isActive = 1
+            tableNumber = data.get("tableNumber")
             orderDate = datetime.datetime.today()
             cursor.execute("SELECT user_id FROM user_login WHERE login_token=?", [data.get("loginToken")])
             userId = cursor.fetchone()[0]
-            print(userId)
 
             cursor.execute("SELECT id FROM dishes WHERE dish_name=?",[data.get("dishName")])
             dishId = cursor.fetchone()[0]
-            print(dishId)
-
-            cursor.execute("SELECT id FROM tables WHERE id=?", [data.get("tableId")])
-            tableId = cursor.fetchone()[0]
-            print(tableId)
-
-
+            
             if userId != None and dishId != None:
-                cursor.execute("INSERT INTO orders(order_date, user_id) VALUES(?,?)", [orderDate, userId])
+                cursor.execute("INSERT INTO orders(order_date, user_id, table_number, is_active) VALUES(?,?,?,?)", [orderDate, userId, tableNumber, isActive])
                 conn.commit()
                 orderId = cursor.lastrowid
-
-                cursor.execute("INSERT INTO table_orders(order_id, table_id) VALUES(?,?)", [orderId, tableId])
-                conn.commit()
-
+                
                 cursor.execute("INSERT INTO order_content(dish_id, order_id) VALUES(?,?)", [dishId, orderId])
                 conn.commit()
+                
+                cursor.execute("SELECT table_number, user_id, dish_name, price, order_date FROM order_content INNER JOIN dishes ON dishes.id=order_content.dish_id INNER JOIN orders ON orders.id=order_content.order_id WHERE table_number=? and user_id=? and is_active=?",[tableNumber, userId, isActive])
+                updatedOrder = cursor.fetchone()
+                print(updatedOrder)
+                
+                orders = {
+                    "tableNumber": updatedOrder[0],
+                    "userId": updatedOrder[1],
+                    "dishname": updatedOrder[2],
+                    "price": updatedOrder[3],
+                    "order_date": updatedOrder[4]
+                }
+                
+                return Response(json.dumps(orders, default=str),
+                                mimetype="application/json",
+                                status=200)
             
+            else:
+                return Response("user id or dish id not found",
+                                mimetype="text/html",
+                                status=400)
+        
+        # DELETE method
+        elif request.method == "DELETE":
+            data = request.json
+            isActive = 1
+            tableNumber = data.get("tableNumber")
+            cursor.execute("SELECT user_id FROM user_login WHERE login_token=?", [data.get("loginToken")])
+            userId = cursor.fetchone()[0]
 
-
-
-
-
-
-
-
-
-
-
-
-                # cursor.execute("SELECT tables.id, user_id, dish_id, price, order_date FROM tables INNER JOIN orders ON orders.id=tables.order_id INNER JOIN order_content ON orders.id=order_content.order_id INNER JOIN dishes ON dishes.id=order_content.dish_id WHERE tables.id=?", [tableId])
-                # newOrder = cursor.fetchone()
-                # print(newOrder)
+            cursor.execute("SELECT id FROM dishes WHERE dish_name=?",[data.get("dishName")])
+            dishId = cursor.fetchone()[0]
+                
+                
 
 
 
