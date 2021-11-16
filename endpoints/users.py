@@ -171,22 +171,28 @@ def users():
         elif request.method == "DELETE":
             data = request.json
             password = data.get("password")
-            cursor.execute("SELECT password, login_token FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE login_token=?", [data.get("loginToken")])
+            cursor.execute("SELECT password, login_token, position FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE login_token=?", [data.get("loginToken")])
             reqData = cursor.fetchone()
             pwFromDB = reqData[0]
             loginToken = reqData[1]
+            position = reqData[2]
 
-            if (bcrypt.checkpw(password.encode(), pwFromDB.encode())): # compare pw
-                cursor.execute("DELETE users, user_login FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE login_token=?",[loginToken])
-                conn.commit()
+            if position == "manager" and loginToken != None:
+                if (bcrypt.checkpw(password.encode(), pwFromDB.encode())): # compare pw
+                    cursor.execute("DELETE users, user_login FROM users INNER JOIN user_login ON users.id=user_login.user_id WHERE login_token=?",[loginToken])
+                    conn.commit()
 
-                return Response("Deleted suucessfully",
-                                mimetype="text/html",
-                                status=200)
+                    return Response("Deleted suucessfully",
+                                    mimetype="text/html",
+                                    status=200)
+                else:
+                    return Response("Wrong data provided",
+                                    mimetype="text/html",
+                                    status=404)
             else:
-                return Response("Wrong data provided",
+                return Response("You are not authorized",
                                 mimetype="text/html",
-                                status=404)
+                                status=400)
 
         else:
             return Response("Request not allowed",

@@ -46,6 +46,7 @@ def dishes():
                     return Response("Invalid id",
                                     mimetype="text/html",
                                     status=200)
+            
             else:
                 cursor.execute("SELECT id, dish_name, price, category, date_created FROM dishes")
                 allDishes = cursor.fetchall()
@@ -123,10 +124,10 @@ def dishes():
                     if data.get("dishName") != None and data.get("dishName") != "":
                         cursor.execute("UPDATE dishes SET dish_name=?, date_modified=? WHERE id=?", [data.get("dishName"), dateModified, dishId])
                     
-                    elif data.get("price") != None and data.get("price") == "":
+                    elif data.get("price") != None and data.get("price") != "":
                         cursor.execute("UPDATE dishes SET price=?, date_modified=? WHERE id=?", [data.get("price"), dateModified, dishId])
 
-                    elif data.get("category") != None and data.get("category") == "":
+                    elif data.get("category") != None and data.get("category") != "":
                         cursor.execute("UPDATE dishes SET category=?, date_modified=? WHERE id=?", [data.get("category"), dateModified, dishId])
                     
                     else: 
