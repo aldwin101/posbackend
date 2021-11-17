@@ -1,8 +1,5 @@
 import sys
-from flask_cors import CORS
 from app import app
-
-
 
 if (len(sys.argv) > 1):
     mode = sys.argv[1]
